@@ -35,7 +35,7 @@ var sendEmail = function (ops) {
 };
 
 //用户注册发送邮箱
-emailSend.regeditEmail = function (userId, nickName, email) {
+emailSend.regeditEmail = function (userId, email) {
     var ops = {};
     ops.email = email;
     ops.title = "EXD账户注册成功";

@@ -12,6 +12,7 @@ var webModel = require('../models/webDB');
 var rhythmModel = require('../models/rhythmDB');
 var resStatusCode = require('../tools/resStatusCode');
 var tools = require('../tools/tools');
+var nodeMailer = require('../tools/nodeMailer');
 class User {
     constructor() {
 
@@ -58,7 +59,7 @@ class User {
     register(req,res,next){
     co(function*(){
         try{
-            var bdoy = req.body;
+            var body = req.body;
             var password = crypto.createHash('md5').update(req.body.password).digest('base64');
             var passwordCheck = crypto.createHash('md5').update(req.body.checkPassword).digest('base64');
             //非法字符账号
@@ -100,6 +101,8 @@ class User {
                     currency: 0,
                     signature:""
                 });
+                nodeMailer.regeditEmail(body.username,body.email);
+                resStatusCode(res,200);
             }
         }
         catch(err){
@@ -113,12 +116,12 @@ class User {
                 var username = req.session.username;
                 var password = crypto.createHash('md5').update(req.body.password).digest('base64');
                 var newPass = crypto.createHash('md5').update(req.body.newPass).digest('base64');
-                var resultPsw = yield db.exdUserModel.qAll({
+                var resultPsw = yield rhythmModel.exdUser.qAll({
                     userId: username,
                     password: password
                 });
                 if (resultPsw.length) {
-                    var update = yield db.exdUserModel.qGet(username);
+                    var update = yield rhythmModel.exdUser.qGet(username);
                     update.password = newPass;
                     update.qSave();
                     resStatusCode(res, 200);
