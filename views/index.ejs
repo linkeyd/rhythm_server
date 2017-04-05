@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+
+</head>
+<body>
+<div class="container">
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#data" role="tab" data-toggle="tab">data</a></li>
+    </ul>
+
+    <!-- data load ajax -->
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="data">
+            <div class="row">
+                <div class="col-lg-12">
+                    <label>Url : </label>
+                    <input type="text" class="form-control" id="url">
+                </div>
+            </div>
+            <div class="row" style="margin-top: 15px">
+                <div class="col-lg-12">
+                    <label>
+                        <input type="checkbox" id="form-data">open form-data
+                    </label>
+                    <div>
+                        <input type="file" id="file">
+                    </div>
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <label>key : </label>
+                </div>
+                <div class="col-lg-6">
+                    <label>value : </label>
+                </div>
+            </div>
+            <div class="data-json">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <input type="text" name="code" id="code" class="form-control">
+                    </div>
+                    <div class="col-lg-6">
+                        <input type="text" name="code" id="code" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <button class="btn btn-danger pull-right btn-delete"><span class="glyphicon glyphicon-remove"></span>
+                    Delete
+                </button>
+                <button class="btn btn-danger pull-right btn-add"><span class="glyphicon glyphicon-plus"></span> Add
+                </button>
+            </div>
+
+            <div class="data-type">
+                <label class="type">
+                    <input type="radio" name="type" id="type">
+                    Get
+                </label>
+                <label class="type">
+                    <input type="radio" name="type" id="type">
+                    Post
+                </label>
+                <label class="type">
+                    <input type="radio" name="type" id="type">
+                    Put
+                </label>
+                <label class="type">
+                    <input type="radio" name="type" id="type">
+                    Delete
+                </label>
+            </div>
+
+            <div class="data-load">
+                <button class="btn btn-primary" id="load-data">Load Ajax</button>
+            </div>
+
+            <div class="show-data">
+                not data.
+            </div>
+        </div>
+        <!--data load ajax end-->
+    </div>
+
+
+</div>
+
+
+<script src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="/javascripts/index.js"></script>
+</body>
+</html>
