@@ -7,7 +7,7 @@ var config = require('../config');
 var emailSend = {};
 
 //邮箱信息配置
-var mailTransport = nodemailer.createTransport('SMTP', {
+var mailTransport = nodemailer.createTransport( {
     host: config.EMAIL_HOST,
     port: config.EMAIL_PORT,
     secure: true,

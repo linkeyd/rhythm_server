@@ -1,5 +1,5 @@
 /**
- * Created by john_ on 2017/1/24.
+ * Created by john_ on 2017/5/17.
  */
 
 var express = require('express');
@@ -8,16 +8,16 @@ var orm = require('orm');
 var qOrm = require('q-orm');
 var co = require('co');
 var crypto = require('crypto');
-var webModel = require('../models/webDB');
-var rhythmModel = require('../models/rhythmDB');
 var resStatusCode = require('../tools/resStatusCode');
 var tools = require('../tools/tools');
 var nodeMailer = require('../tools/nodeMailer');
+
+import {bbsUser,exdUser,bbsTalk} from '../models/model';
+
 class User {
     constructor() {
 
     }
-
     login(req, res, next) {
         co(function*() {
             try {
@@ -25,7 +25,7 @@ class User {
                 var username = req.body.username;
                 var password = crypto.createHash('md5').update(req.body.password).digest('base64');
                 //mysql 查找id
-                var loginResult = yield rhythmModel.exdUser.qAll({
+                var loginResult = yield exdUser.qAll({
                     userId: username
                 });
                 //账号不存在
@@ -38,17 +38,18 @@ class User {
                 }
                 else {
                     //查找bbs数据库里有没有用户信息如果没有创建一条用户信息
-                    var bbsLoginResult = yield webModel.bbsUser.qGet(username);
+                    var bbsLoginResult = yield bbsUser.qGet(username);
                     if (tools.isEmptyObject(bbsLoginResult)) {
-                        yield webModel.bbsUser.qCreate({
+                        yield bbsUser.qCreate({
                             userId: username,
                             exp: 0,
                             currency: 0,
-                            signature:""
+                            signature:"暂时没什么好说的。"
                         });
+                        bbsLoginResult = yield bbsUser.qGet(username);
                     }
                     req.session.username = loginResult[0].userId;
-                    resStatusCode(res, 200);
+                    resStatusCode(res, 200,{user:[loginResult[0],bbsLoginResult]});
                 }
             }
             catch (err) {
@@ -59,13 +60,15 @@ class User {
     register(req,res,next){
     co(function*(){
         try{
+
             var body = req.body;
-            var password = crypto.createHash('md5').update(req.body.password).digest('base64');
-            var passwordCheck = crypto.createHash('md5').update(req.body.checkPassword).digest('base64');
+            var password = crypto.createHash('md5').update(body.password).digest('base64');
+            var passwordCheck = crypto.createHash('md5').update(body.confirmPsw).digest('base64');
             //非法字符账号
             var illegalChar = /^[A-Za-z0-9_-]+$/;
             //账号为空
-            if (body.username === '' || body.username == 'undefined') {
+            if (body.username === '')
+            {
                 resStatusCode(res, 1105);
             }
             //账号非法字符
@@ -82,26 +85,26 @@ class User {
             }
             else{
                 //生日为空赋值
-                if (body.birthDay === '') {
-                    body.birthDay = new Date();
+                if (body.date === '') {
+                    body.date = new Date();
                 }
                 //数据库添加
-                yield rhythmModel.exdUser.qCreate({
+                yield exdUser.qCreate({
                     userId: body.username,
                     password: password,
                     email: body.email,
                     sex: body.sex,
-                    birthDay: body.birthDay,
+                    birthDay: body.date,
                     phoneNumber: body.phoneNumber,
-                    avatar: 'avatar/default.png'
+                    avatar: '../images/avatar.jpg'
                 });
-                yield webModel.bbsUser.qCreate({
+                yield bbsUser.qCreate({
                     userId: body.username,
                     exp: 0,
                     currency: 0,
-                    signature:""
+                    signature:"暂时没什么好说的"
                 });
-                nodeMailer.regeditEmail(body.username,body.email);
+                //nodeMailer.regeditEmail(body.username,body.email);
                 resStatusCode(res,200);
             }
         }
@@ -113,16 +116,18 @@ class User {
     passwordUpdate(req, res, next) {
         co(function*() {
             try {
-                var username = req.session.username;
-                var password = crypto.createHash('md5').update(req.body.password).digest('base64');
-                var newPass = crypto.createHash('md5').update(req.body.newPass).digest('base64');
-                var resultPsw = yield rhythmModel.exdUser.qAll({
-                    userId: username,
-                    password: password
+                let body = req.body;
+                console.log(req.body);
+                let userId = body.userId;
+                let originalPwd = crypto.createHash('md5').update(body.originalPwd).digest('base64');
+                let newPwd = crypto.createHash('md5').update(body.newPwd).digest('base64');
+                let resultPsw = yield exdUser.qAll({
+                    userId,
+                    password: originalPwd
                 });
                 if (resultPsw.length) {
-                    var update = yield rhythmModel.exdUser.qGet(username);
-                    update.password = newPass;
+                    var update = resultPsw[0];
+                    update.password = newPwd;
                     update.qSave();
                     resStatusCode(res, 200);
                 }
@@ -140,8 +145,8 @@ class User {
         co(function*() {
             try {
 
-                var userSelect = yield rhythmModel.exdUser.qGet(req.session.username);
-                var bbsSelect = yield webModel.bbsUser.qGet(req.session.username);
+                var userSelect = yield exdUser.qGet(req.session.username);
+                var bbsSelect = yield bbsUser.qGet(req.session.username);
                 if (userSelect) {
                     resStatusCode(res, 200, [userSelect, bbsSelect]);
                 }
@@ -173,7 +178,7 @@ class User {
                 update.locateDistrict = locateDistrict;
                 update.qSave();
 
-                var updateBbs = yield db.bbsUser.qGet(username);
+                var updateBbs = yield bbsUser.qGet(username);
                 updateBbs.nickname = req.body.nickname;
                 updateBbs.status = req.body.status;
                 updateBbs.qSave();
@@ -190,31 +195,39 @@ class User {
     }
 
     signInAdd(req, res, next) {
-        //游戏币
-        var currency = 2;
-        var username = req.session.username;
-        var bbsUsername = yield db.bbsUser.qGet(username);
-        var date = new Date();
-        var bbsSignIn = yield db.bbsSignIn.qFind({
-            userId:username
-        }).orderRaw("?? DESC",['time']);
+        co(function*(){
+        try{
+            //游戏币
+            var currency = 2;
+            var username = req.session.username;
+            var bbsUsername = yield bbsUser.qGet(username);
+            var date = new Date();
+            var bbsSignIn = yield bbsSignIn.qFind({
+                userId:username
+            }).orderRaw("?? DESC",['time']);
 
-        var thisDate = new Date(bbsSignIn[0].time);
-        if (thisDate.getDate() == date.getDate()) {
-            resStatusCode(res, 1401);
-        }
-        else {
-            if (tools.isEmptyObject(bbsUsername)) {
-                bbsUsername.currency += currency;
-                bbsUsername.qSave();
-                yield db.bbsSignIn.qCreate({
-                    time:date,
-                    userId :username
-                });
-                resStatusCode(res,200);
+            var thisDate = new Date(bbsSignIn[0].time);
+            if (thisDate.getDate() == date.getDate()) {
+                resStatusCode(res, 1401);
             }
+            else {
+                if (tools.isEmptyObject(bbsUsername)) {
+                    bbsUsername.currency += currency;
+                    bbsUsername.qSave();
+                    yield db.bbsSignIn.qCreate({
+                        time:date,
+                        userId :username
+                    });
+                    resStatusCode(res,200);
+                }
 
+            }
         }
+        catch (err){
+          console.log(err);
+        }
+        });
+
 
 
     }

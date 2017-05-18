@@ -4,8 +4,9 @@
 module.exports = function(res,status,data){
     let message = (typeof data)=='object' ? data : _errorCodeMessage[status];
     let success = status == 200 ? true : false;
-    res.status(status).json({
+    res.json({
         success,
+        status,
         message
     });
 };
@@ -29,6 +30,6 @@ const _errorCodeMessage = {
     "1301":"邮箱或者账号错误",
     "1201":"验证码失效",
     "1302": "用户未登陆",
-    "1401": "今日已签到"
-
+    "1401": "今日已签到",
+    "1402": "图片上传失败"
 };
